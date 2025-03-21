@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>City Samadhan - Dashboard</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  </head>
+  <body>
+    <h1>City Samadhan Dashboard</h1>
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash">{{ messages[0] }}</div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="actions">
+        <a href="{{ url_for('submit_complaint') }}" class="button">Submit New Complaint</a>
+        <a href="{{ url_for('logout') }}" class="button logout">Logout</a>
+    </div>
+
+    <div class="complaints-list">
+        {% for complaint in complaints %}
+        <div class="complaint-card">
+            <div class="complaint-header">
+                <h2><a href="{{ url_for('view_complaint', complaint_id=complaint.id) }}">{{ complaint.title }}</a></h2>
+                <div class="status-badge" data-status="{{ complaint.status }}">
+                    {{ complaint.status }}
+                </div>
+            </div>
+
+            <div class="complaint-meta">
+                <span><i class="fas fa-map-marker-alt"></i> {{ complaint.location }}</span>
+                <span><i class="fas fa-user"></i> {{ complaint.author.name }}</span>
+                <span><i class="fas fa-calendar"></i> {{ complaint.timestamp.strftime('%Y-%m-%d') }}</span>
+                <span><i class="fas fa-building"></i> {{ complaint.agency }}</span>
+            </div>
+
+            <p class="complaint-desc">{{ complaint.description[:200] }}{% if complaint.description|length > 200 %}...{% endif %}</p>
+
+            {% if complaint.photo %}
+            <div class="complaint-photo">
+                <img src="{{ url_for('static', filename='uploads/' + complaint.photo) }}" alt="Complaint Photo">
+            </div>
+            {% endif %}
+
+            <div class="complaint-actions">
+                <div class="voting">
+                    <button onclick="vote('{{ complaint.id }}', 'upvote')" class="vote-btn upvote">
+                        <i class="fas fa-arrow-up"></i>
+                        <span id="upvotes-{{ complaint.id }}">{{ complaint.upvotes }}</span>
+                    </button>
+                    <button onclick="vote('{{ complaint.id }}', 'downvote')" class="vote-btn downvote">
+                        <i class="fas fa-arrow-down"></i>
+                        <span id="downvotes-{{ complaint.id }}">{{ complaint.downvotes }}</span>
+                    </button>
+                </div>
+
+                {% if complaint.is_thread %}
+                <div class="thread-info">
+                    <i class="fas fa-comments"></i>
+                    <span>{{ complaint.similar_complaints.count() }} related complaints</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <p class="no-complaints">No complaints submitted yet.</p>
+        {% endfor %}
+    </div>
+
+    <script>
+        function vote(complaintId, voteType) {
+            fetch(`/vote/${complaintId}/${voteType}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById(`upvotes-${complaintId}`).textContent = data.upvotes;
+                document.getElementById(`downvotes-${complaintId}`).textContent = data.downvotes;
+                
+                // Update status if changed
+                const statusBadge = document.querySelector(`#complaint-${complaintId} .status-badge`);
+                if (statusBadge.getAttribute('data-status') !== data.status) {
+                    statusBadge.setAttribute('data-status', data.status);
+                    statusBadge.textContent = data.status;
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+  </body>
+</html>

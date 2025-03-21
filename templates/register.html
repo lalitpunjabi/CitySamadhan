@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>City Samadhan - Register</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  </head>
+  <body>
+    <div class="container">
+      <h1>Register</h1>
+      {% with messages = get_flashed_messages() %} {% if messages %}
+      <div class="flash">{{ messages[0] }}</div>
+      {% endif %} {% endwith %}
+      <div class="form-container">
+        <form method="POST" action="{{ url_for('register') }}">
+          <div class="form-group">
+            <label for="name"><i class="fas fa-user"></i> Name:</label>
+            <input type="text" id="name" name="name" required />
+          </div>
+          <div class="form-group">
+            <label for="email"><i class="fas fa-envelope"></i> Email:</label>
+            <input type="email" id="email" name="email" required />
+          </div>
+          <div class="form-group">
+            <label for="phone"><i class="fas fa-phone"></i> Phone:</label>
+            <input type="tel" id="phone" name="phone" required pattern="[0-9]{10}" title="Please enter a valid 10-digit phone number">
+          </div>
+          <div class="form-group">
+            <label for="state"><i class="fas fa-map"></i> State:</label>
+            <select id="state" name="state" required onchange="updateCities()">
+              <option value="">Select State</option>
+              {% for state in states %}
+                <option value="{{ state }}">{{ state }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="city"><i class="fas fa-city"></i> City:</label>
+            <select id="city" name="city" required>
+              <option value="">Select City</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="password"><i class="fas fa-lock"></i> Password:</label>
+            <input type="password" id="password" name="password" required pattern="^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$" title="Password must be at least 8 characters long and include at least one letter, one number, and one special character">
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="button">
+              <i class="fas fa-user-plus"></i> Register
+            </button>
+            <a href="{{ url_for('login') }}" class="button secondary">
+              <i class="fas fa-sign-in-alt"></i> Back to Login
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      function updateCities() {
+        const state = document.getElementById('state').value;
+        const citySelect = document.getElementById('city');
+        citySelect.innerHTML = '<option value="">Select City</option>';
+        
+        if (state) {
+          const cities = {{ cities|tojson|safe }}[state] || [];
+          cities.forEach(city => {
+            const option = document.createElement('option');
+            option.value = city;
+            option.textContent = city;
+            citySelect.appendChild(option);
+          });
+        }
+      }
+    </script>
+  </body>
+</html>
